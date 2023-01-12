@@ -41,6 +41,27 @@ const tables = [
       },
     ],
   },
+  {
+    name: "lobbies",
+    columns: [
+      {
+        name: "id",
+        type: "INTEGER primary key",
+      },
+      {
+        name: "status",
+        type: "text",
+      },
+      {
+        name: "players",
+        type: "text",
+      },
+      {
+        name: "board",
+        type: "text",
+      },
+    ],
+  },
 ];
 
 export async function setup() {
@@ -117,6 +138,29 @@ export async function getItem(table, params) {
     });
   });
 }
+export async function updateItem(table, id, data) {
+  const columns = Object.keys(data);
+  const values = Object.values(data);
+
+  return new Promise((resolve, reject) => {
+    db.serialize(() => {
+      db.run(
+        `update ${table} set ${columns
+          .map((c) => `${c} = ?`)
+          .join(", ")} where id = ${id}`,
+        [...values],
+        function (err) {
+          if (err) {
+            reject(err);
+            console.error(err);
+          } else {
+            resolve(this.lastID);
+          }
+        }
+      );
+    });
+  });
+}
 export async function getSession(sessionCookie) {
   const session = await getItem("sessions", { token: sessionCookie });
 
@@ -167,6 +211,20 @@ export async function removeUserSessions(userId) {
           console.error(err);
         } else {
           resolve(this.changes);
+        }
+      });
+    });
+  });
+}
+export async function queryItems(query) {
+  return new Promise((resolve, reject) => {
+    db.serialize(() => {
+      db.all(query, (err, rows) => {
+        if (err) {
+          reject(err);
+          console.error(err);
+        } else {
+          resolve(rows);
         }
       });
     });
