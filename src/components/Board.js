@@ -1,28 +1,30 @@
-import { useState } from "react";
+import toastr from "toastr";
 
-const fieldsX = 3;
-const fieldsY = 3;
-
-export default function Board(params) {
-  const [squares, setSquares] = useState(Array(fieldsX * fieldsY).fill(null));
-  const [xIsNext, setXIsNext] = useState(true);
-
-  const Square = (params) => {
+export default function Board({ board: squares, canMove, gameId, opponent }) {
+  const Square = ({ value, onClick }) => {
     return (
-      <div className="board-cell" onClick={params.onClick}>
-        {params.value}
+      <div className="board-cell" onClick={onClick}>
+        {value}
       </div>
     );
   };
 
-  const handleClick = (i) => {
-    const squaresCopy = [...squares];
-    if (calculateWinner(squaresCopy) || squaresCopy[i]) {
-      return;
-    }
-    squaresCopy[i] = xIsNext ? "X" : "O";
-    setSquares(squaresCopy);
-    setXIsNext(!xIsNext);
+  const handleClick = async (i) => {
+    await fetch("/api/lobby/move", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        position: i,
+        gameId,
+      }),
+    }).then(async (response) => {
+      const data = await response.json();
+      if (data.success) {
+        toastr.success("Move made successfully");
+      } else {
+        toastr.error("Something went wrong");
+      }
+    });
   };
 
   const renderSquare = (i) => {
@@ -68,13 +70,13 @@ export default function Board(params) {
   return (
     <div>
       <div className="status">
-        {calculateWinner(squares) ? (
+        {/* {calculateWinner(squares) ? (
           <div>Winner: {calculateWinner(squares)}</div>
         ) : isDraw(squares) ? (
           <div>Draw</div>
-        ) : (
-          <div>Next player: {xIsNext ? "X" : "O"}</div>
-        )}
+        ) : ( */}
+        <div>Next player: {canMove ? "You" : opponent}</div>
+        {/* )} */}
       </div>
       <div className="board">
         <div className="board-row">
